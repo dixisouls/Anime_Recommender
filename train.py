@@ -14,7 +14,12 @@ import torch
 
 
 def get_config_dict():
-    """Convert Config class variables to a dictionary"""
+    """
+    Convert Config class variables to a dictionary.
+
+    Returns:
+        dict: Dictionary containing configuration parameters.
+    """
     config_dict = {}
     for attr in dir(Config):
         # Skip private/special attributes
@@ -28,6 +33,12 @@ def get_config_dict():
 
 
 def parse_args():
+    """
+    Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(description="Train Anime Recommender")
     parser.add_argument(
         "--anime_path",
@@ -63,14 +74,17 @@ def parse_args():
 
 
 def main():
-    # Parse arguments
+    """
+    Main function to train the Anime Recommender model.
+    """
+    # Parse command-line arguments
     args = parse_args()
 
     # Setup logging
     setup_logging()
     logger = logging.getLogger(__name__)
 
-    # Create save directories
+    # Create directories for saving models and plots
     create_save_directories([args.model_save_path, args.plot_save_path])
 
     try:
@@ -80,13 +94,13 @@ def main():
             args.anime_path, args.ratings_path
         )
 
-        # Create environment
+        # Create the reinforcement learning environment
         logger.info("Creating environment...")
         env = AnimeEnvironment(
             anime_df, ratings_df, n_recommendations=Config.N_RECOMMENDATIONS
         )
 
-        # Initialize agent
+        # Initialize the Deep Q-Learning agent
         logger.info("Initializing agent...")
         state_size = len(env.animes)
         action_size = len(env.animes)
@@ -106,7 +120,7 @@ def main():
             learning_rate=Config.LEARNING_RATE,
         )
 
-        # Train agent
+        # Train the agent
         logger.info("Starting training...")
         rewards_history = agent.train(env, args.num_episodes)
 
@@ -114,7 +128,7 @@ def main():
         logger.info("Plotting training progress...")
         plot_training_progress(rewards_history, args.plot_save_path)
 
-        # Save model and metadata
+        # Save the trained model and metadata
         logger.info("Saving model and metadata...")
         agent.save(args.model_save_path)
 

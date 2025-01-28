@@ -12,6 +12,12 @@ warnings.filterwarnings("ignore")
 
 
 def parse_args():
+    """
+    Parse command-line arguments.
+
+    Returns:
+        argparse.Namespace: Parsed command-line arguments.
+    """
     parser = argparse.ArgumentParser(description="Get Anime Recommendations")
     parser.add_argument(
         "--anime_path",
@@ -41,13 +47,27 @@ def parse_args():
 
 
 def load_metadata(path: str = "saved_models/metadata.json"):
-    """Load saved metadata"""
+    """
+    Load saved metadata from a JSON file.
+
+    Args:
+        path (str): Path to the metadata JSON file.
+
+    Returns:
+        dict: Loaded metadata.
+    """
     with open(path, "r") as f:
         return json.load(f)
 
 
 def format_recommendation_output(recommendations, anime_df):
-    """Format recommendations with detailed information"""
+    """
+    Format and print recommendations with detailed information.
+
+    Args:
+        recommendations (list): List of recommended anime IDs and names.
+        anime_df (pd.DataFrame): DataFrame containing anime information.
+    """
     print("\nRecommended Animes:")
     print("=" * 80)
 
@@ -63,7 +83,10 @@ def format_recommendation_output(recommendations, anime_df):
 
 
 def main():
-    # Parse arguments
+    """
+    Main function to generate anime recommendations for a user.
+    """
+    # Parse command-line arguments
     args = parse_args()
 
     # Setup logging
@@ -108,9 +131,8 @@ def main():
                 break
             elif user_id not in env.users:
                 print(f"User {user_id} not found in dataset. Please try again.")
-                logger.error(f"User {args.user_id} not found in dataset")
+                logger.error(f"User {user_id} not found in dataset")
             else:
-
                 # Get recommendations
                 logger.info(f"Generating recommendations for user {user_id}...")
                 recommendations = get_recommendations(

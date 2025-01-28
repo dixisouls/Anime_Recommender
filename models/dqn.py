@@ -12,17 +12,17 @@ class DQNetwork(nn.Module):
         dropout_rate: float = 0.2,
     ):
         """
-        Initialize Deep Q-Network
+        Initialize the Deep Q-Network.
 
         Args:
-            state_size (int): Size of input state
-            action_size (int): Size of action space
-            hidden_sizes (List[int]): List of hidden layer sizes
-            dropout_rate (float): Dropout rate for regularization
+            state_size (int): Dimension of the input state.
+            action_size (int): Dimension of the action space.
+            hidden_sizes (List[int]): List of hidden layer sizes.
+            dropout_rate (float): Dropout rate for regularization.
         """
         super(DQNetwork, self).__init__()
 
-        # Build layers dynamically
+        # List to hold the layers of the network
         layers = []
 
         # Input layer
@@ -47,13 +47,19 @@ class DQNetwork(nn.Module):
         # Output layer
         layers.append(nn.Linear(hidden_sizes[-1], action_size))
 
+        # Combine all layers into a sequential model
         self.network = nn.Sequential(*layers)
 
-        # Initialize weights
+        # Initialize weights of the network
         self.apply(self._init_weights)
 
     def _init_weights(self, module):
-        """Initialize network weights"""
+        """
+        Initialize the weights of the network layers.
+
+        Args:
+            module: A module in the network.
+        """
         if isinstance(module, nn.Linear):
             torch.nn.init.xavier_uniform_(module.weight)
             if module.bias is not None:
@@ -61,23 +67,34 @@ class DQNetwork(nn.Module):
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """
-        Forward pass through the network
+        Perform a forward pass through the network.
 
         Args:
-            x (torch.Tensor): Input tensor of shape (batch_size, state_size)
+            x (torch.Tensor): Input tensor of shape (batch_size, state_size).
 
         Returns:
-            torch.Tensor: Output tensor of shape (batch_size, action_size)
+            torch.Tensor: Output tensor of shape (batch_size, action_size).
         """
-        # Ensure input tensor has correct shape
+        # Add batch dimension if missing
         if len(x.shape) == 1:
-            x = x.unsqueeze(0)  # Add batch dimension if missing
+            x = x.unsqueeze(0)
         return self.network(x)
 
     def save(self, path: str):
-        """Save model state"""
+        """
+        Save the model state to a file.
+
+        Args:
+            path (str): Path to save the model state.
+        """
         torch.save(self.state_dict(), path)
 
     def load(self, path: str, device: torch.device):
-        """Load model state"""
+        """
+        Load the model state from a file.
+
+        Args:
+            path (str): Path to the model state file.
+            device (torch.device): Device to map the model to.
+        """
         self.load_state_dict(torch.load(path, map_location=device))

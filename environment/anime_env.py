@@ -17,12 +17,12 @@ class AnimeEnvironment:
         n_recommendations: int = 5,
     ):
         """
-        Initialize Anime Environment
+        Initialize the AnimeEnvironment.
 
         Args:
-            anime_data (pd.DataFrame): Preprocessed anime data
-            ratings_data (pd.DataFrame): Preprocessed ratings data
-            n_recommendations (int): Number of recommendations to make
+            anime_data (pd.DataFrame): DataFrame containing anime information.
+            ratings_data (pd.DataFrame): DataFrame containing user ratings.
+            n_recommendations (int): Number of recommendations to generate.
         """
         self.anime_df = anime_data
         self.ratings_df = ratings_data
@@ -37,20 +37,20 @@ class AnimeEnvironment:
             fill_value=0,
         )
 
-        # Calculate anime popularity and average ratings
+        # Calculate anime statistics
         self.anime_stats = self._calculate_anime_stats()
 
         self.users = self.user_anime_matrix.index.tolist()
         self.animes = self.user_anime_matrix.columns.tolist()
 
-        # Create mappings
+        # Create mappings from user/anime IDs to indices
         self.user_to_idx = {user: idx for idx, user in enumerate(self.users)}
         self.anime_to_idx = {anime: idx for idx, anime in enumerate(self.animes)}
 
-        # Convert ratings to torch tensor
+        # Convert ratings matrix to torch tensor
         self.ratings_matrix = torch.FloatTensor(self.user_anime_matrix.values)
 
-        # Calculate user preferences (genres, types)
+        # Calculate user preferences
         self.user_preferences = self._calculate_user_preferences()
 
         logger.info(
@@ -58,7 +58,12 @@ class AnimeEnvironment:
         )
 
     def _calculate_anime_stats(self) -> pd.DataFrame:
-        """Calculate popularity and average ratings for each anime"""
+        """
+        Calculate popularity and average ratings for each anime.
+
+        Returns:
+            pd.DataFrame: DataFrame containing anime statistics.
+        """
         stats = pd.DataFrame()
         stats["popularity"] = self.ratings_df.groupby("anime_id").size()
         stats["avg_rating"] = self.ratings_df.groupby("anime_id")["rating"].mean()
@@ -68,7 +73,12 @@ class AnimeEnvironment:
         return stats
 
     def _calculate_user_preferences(self) -> Dict:
-        """Calculate genre and type preferences for each user"""
+        """
+        Calculate genre and type preferences for each user.
+
+        Returns:
+            Dict: Dictionary containing user preferences.
+        """
         file_path = "saved_models/user_preferences.pkl"
         try:
             with open(file_path, "rb") as f:
@@ -159,14 +169,30 @@ class AnimeEnvironment:
         return preferences
 
     def reset(self, user_id: int) -> torch.Tensor:
-        """Reset environment for new user session"""
+        """
+        Reset the environment for a new user session.
+
+        Args:
+            user_id (int): ID of the user.
+
+        Returns:
+            torch.Tensor: Initial state for the user.
+        """
         self.current_user = user_id
         self.user_history = []
         self.current_state = self.get_user_state(user_id)
         return self.current_state
 
     def get_user_state(self, user_id: int) -> torch.Tensor:
-        """Get current state representation for user"""
+        """
+        Get the current state representation for a user.
+
+        Args:
+            user_id (int): ID of the user.
+
+        Returns:
+            torch.Tensor: State tensor for the user.
+        """
         user_idx = self.user_to_idx[user_id]
         return self.ratings_matrix[user_idx]
 
@@ -174,11 +200,15 @@ class AnimeEnvironment:
         self, user_id: int, anime_id: int, actual_rating: float
     ) -> float:
         """
-        Calculate reward based on multiple factors:
-        1. Actual rating (if available)
-        2. Genre matching with user preferences
-        3. Popularity bonus for less popular but highly rated items
-        4. Diversity bonus for recommending different genres/types
+        Calculate the reward for recommending an anime to a user.
+
+        Args:
+            user_id (int): ID of the user.
+            anime_id (int): ID of the recommended anime.
+            actual_rating (float): Actual rating given by the user.
+
+        Returns:
+            float: Calculated reward.
         """
         reward = 0.0
 
@@ -223,7 +253,16 @@ class AnimeEnvironment:
         return reward
 
     def step(self, action: int, user_id: int) -> Tuple[torch.Tensor, float, bool]:
-        """Execute action and return new state, reward, done"""
+        """
+        Execute an action and return the new state, reward, and done flag.
+
+        Args:
+            action (int): Index of the selected anime.
+            user_id (int): ID of the user.
+
+        Returns:
+            Tuple[torch.Tensor, float, bool]: New state, reward, and done flag.
+        """
         user_idx = self.user_to_idx[user_id]
         anime_id = self.animes[action]
 
@@ -243,5 +282,13 @@ class AnimeEnvironment:
         return new_state, reward, done
 
     def get_valid_actions(self, state: torch.Tensor) -> torch.Tensor:
-        """Get mask of valid actions (unwatched animes)"""
+        """
+        Get a mask of valid actions (unwatched animes).
+
+        Args:
+            state (torch.Tensor): Current state tensor.
+
+        Returns:
+            torch.Tensor: Mask of valid actions.
+        """
         return state == 0

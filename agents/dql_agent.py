@@ -30,7 +30,24 @@ class DQLAgent:
         dropout_rate: float = 0.2,
         learning_rate: float = 0.0001,
     ):
-        """Initialize DQL Agent"""
+        """
+        Initialize the DQL Agent.
+
+        Args:
+            state_size (int): Dimension of the input state.
+            action_size (int): Dimension of the action space.
+            hidden_sizes (List[int]): List of hidden layer sizes.
+            device (torch.device): Device to run the model on.
+            batch_size (int): Size of each training batch.
+            gamma (float): Discount factor for future rewards.
+            eps_start (float): Initial epsilon value for epsilon-greedy policy.
+            eps_end (float): Minimum epsilon value.
+            eps_decay (float): Decay rate for epsilon.
+            target_update (int): Frequency of target network updates.
+            memory_capacity (int): Capacity of the replay memory.
+            dropout_rate (float): Dropout rate for regularization.
+            learning_rate (float): Learning rate for the optimizer.
+        """
         self.state_size = state_size
         self.action_size = action_size
         self.device = device
@@ -42,7 +59,7 @@ class DQLAgent:
         self.epsilon = eps_start
         self.learning_rate = learning_rate
 
-        # Initialize networks
+        # Initialize policy and target networks
         self.policy_net = DQNetwork(
             state_size, action_size, hidden_sizes, dropout_rate
         ).to(device)
@@ -51,8 +68,10 @@ class DQLAgent:
         ).to(device)
         self.target_net.load_state_dict(self.policy_net.state_dict())
 
+        # Initialize optimizer
         self.optimizer = optim.Adam(self.policy_net.parameters(), lr=learning_rate)
 
+        # Initialize replay memory
         self.memory = ReplayMemory(memory_capacity)
 
         logger.info(
@@ -62,7 +81,16 @@ class DQLAgent:
     def select_action(
         self, state: torch.Tensor, valid_actions: Optional[torch.Tensor] = None
     ) -> int:
-        """Select action using epsilon-greedy policy"""
+        """
+        Select an action using epsilon-greedy policy.
+
+        Args:
+            state (torch.Tensor): Current state tensor.
+            valid_actions (Optional[torch.Tensor]): Mask of valid actions.
+
+        Returns:
+            int: Index of the selected action.
+        """
         if random.random() > self.epsilon:
             with torch.no_grad():
                 state = state.to(self.device)
@@ -86,7 +114,16 @@ class DQLAgent:
             return random.randrange(self.action_size)
 
     def train(self, env, num_episodes: int) -> List[float]:
-        """Train the agent"""
+        """
+        Train the agent.
+
+        Args:
+            env: The environment to train the agent in.
+            num_episodes (int): Number of episodes to train for.
+
+        Returns:
+            List[float]: List of rewards per episode.
+        """
         episode_rewards = []
 
         for episode in tqdm(range(num_episodes), desc="Training"):
@@ -104,18 +141,18 @@ class DQLAgent:
                 next_state, reward, done = env.step(action, user_id)
                 episode_reward += reward
 
-                # Store transition
+                # Store transition in replay memory
                 self.memory.push(state, action, reward, next_state, done)
                 state = next_state
 
-                # Train model if enough samples
+                # Train model if enough samples are available
                 if len(self.memory) >= self.batch_size:
                     self._optimize_model()
 
                 if done:
                     break
 
-            # Update target network
+            # Update target network periodically
             if episode % self.target_update == 0:
                 self.target_net.load_state_dict(self.policy_net.state_dict())
 
@@ -124,7 +161,7 @@ class DQLAgent:
 
             episode_rewards.append(episode_reward)
 
-            # Log progress
+            # Log progress every 10 episodes
             if (episode + 1) % 10 == 0:
                 avg_reward = np.mean(episode_rewards[-10:])
                 logger.info(
@@ -134,16 +171,18 @@ class DQLAgent:
         return episode_rewards
 
     def _optimize_model(self):
-        """Perform one step of optimization on the policy network"""
+        """
+        Perform one step of optimization on the policy network.
+        """
         if len(self.memory) < self.batch_size:
             return
 
-        # Sample from memory
+        # Sample a batch of transitions from replay memory
         state_batch, action_batch, reward_batch, next_state_batch, done_batch = (
             self.memory.sample(self.batch_size)
         )
 
-        # Move to device
+        # Move tensors to the appropriate device
         state_batch = state_batch.to(self.device)
         action_batch = action_batch.to(self.device)
         reward_batch = reward_batch.to(self.device)
@@ -176,7 +215,12 @@ class DQLAgent:
         self.optimizer.step()
 
     def save(self, path: str):
-        """Save agent state"""
+        """
+        Save the agent's state to a file.
+
+        Args:
+            path (str): Path to save the agent's state.
+        """
         torch.save(
             {
                 "policy_net_state_dict": self.policy_net.state_dict(),
@@ -189,7 +233,12 @@ class DQLAgent:
         logger.info(f"Agent saved to {path}")
 
     def load(self, path: str):
-        """Load agent state"""
+        """
+        Load the agent's state from a file.
+
+        Args:
+            path (str): Path to the file containing the agent's state.
+        """
         checkpoint = torch.load(path, map_location=self.device)
         self.policy_net.load_state_dict(checkpoint["policy_net_state_dict"])
         self.target_net.load_state_dict(checkpoint["target_net_state_dict"])
