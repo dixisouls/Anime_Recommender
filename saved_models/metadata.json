@@ -1,0 +1,32 @@
+{
+    "state_size": 9892,
+    "action_size": 9892,
+    "num_episodes": 2000,
+    "final_epsilon": 0.05,
+    "num_users": 69600,
+    "num_animes": 9892,
+    "config": {
+        "ANIME_PATH": "data/anime.csv",
+        "BATCH_SIZE": 64,
+        "DEVICE": "cuda",
+        "DROPOUT_RATE": 0.2,
+        "EPS_DECAY": 0.997,
+        "EPS_END": 0.05,
+        "EPS_START": 1.0,
+        "GAMMA": 0.95,
+        "HIDDEN_SIZES": [
+            1024,
+            512,
+            256
+        ],
+        "LEARNING_RATE": 0.0001,
+        "MEMORY_CAPACITY": 10000,
+        "MODEL_SAVE_PATH": "saved_models/anime_recommender.pth",
+        "NUM_EPISODES": 2000,
+        "N_RECOMMENDATIONS": 5,
+        "PLOT_SAVE_PATH": "plots/training_progress.png",
+        "RANDOM_SEED": 42,
+        "RATINGS_PATH": "data/rating.csv",
+        "TARGET_UPDATE": 5
+    }
+}
