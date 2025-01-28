@@ -51,8 +51,8 @@ The goal of this project is to build a reinforcement learning system capable of 
 
 Clone the repository:
 ```bash
-git clone https://github.com/yourusername/anime-recommender.git
-cd anime-recommender
+git clone  https://github.com/dixisouls/Anime_Recommender
+cd Anime_Recommender
 ```
 
 Install the required libraries:
